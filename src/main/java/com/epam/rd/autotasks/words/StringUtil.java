@@ -47,9 +47,22 @@ public class StringUtil {
             return convertWindowsToUnix(path);
         }
     }
+    private static boolean isCorrectPathUnix(String path) {
+        if (path.contains("~")) count++;
+        return count <= 1
+                || path.endsWith("~") || path.endsWith("/")
+                || ! path.contains("C:/")
+                || !path.contains("\\");
+    }
+
+    private static boolean isCorrectPathWindows(String path) {
+        if (path.contains("C:/")) count++;
+        return ! path.contains("~\\")
+                || ! path.contains("~")
+                || ! path.contains("/");
+    }
 
     private static String convertUnixToWindows(String path) {
-
         if (path.startsWith("~/")) {
             path = "C:\\User\\".concat(path.substring(2).replace('/', '\\'));
         } else if (path.equals("/")) {
@@ -111,21 +124,12 @@ public class StringUtil {
         return null;
     }
 
+    public static void main(String[] args) {
 
-    private static boolean isCorrectPathUnix(String path) {
-        for (int i = 0; i < path.length(); i++) {
-            if (path.contains("~")) count++;
-            if (count > 1 && path.charAt(0) != '~' && path.contains("C:/")) return false;
-        }
-        return true;
-    }
+        String unix = "/folder1/folder2\\folder3";
+        String win = "C:\\User/root";
 
-    private static boolean isCorrectPathWindows(String path) {
-        for (int i = 0; i < path.length(); i++) {
-            if (path.contains("C:/")) count++;
-//            if (count > 1) return false;
-            if (path.contains("~\\") && path.contains("~") && path.contains("/")) return false;
-        }
-        return true;
+        System.out.println(convertPath(unix, false));
+        System.out.println(convertPath(win, true));
     }
 }
