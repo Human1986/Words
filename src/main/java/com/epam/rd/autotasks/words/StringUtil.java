@@ -1,12 +1,13 @@
 package com.epam.rd.autotasks.words;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.regex.Pattern;
 
 public class StringUtil {
+    static int count = 0;
+
     public static int countEqualIgnoreCaseAndSpaces(String[] words, String sample) {
         int count = 0;
         if (words == null || sample == null) return 0;
@@ -38,21 +39,22 @@ public class StringUtil {
 
     public static String convertPath(String path, boolean toWin) {
         if (path == null || path.isEmpty()) return null;
-        if (! isCorrectPathUnix(path) && ! isCorrectPathWindows(path)) {
-            return null;
+        if (! isCorrectPathWindows(path) || ! isCorrectPathUnix(path)) return null;
+
+        if (toWin) {
+            return convertUnixToWindows(path);
         } else {
-            if (toWin) {
-                return convertUnixToWindows(path);
-            } else return convertWindowsToUnix(path);
+            return convertWindowsToUnix(path);
         }
     }
 
     private static String convertUnixToWindows(String path) {
-//        if (path.contains("/")) path = path.replace("/", "\\");
 
         if (path.startsWith("~/")) {
             path = "C:\\User\\".concat(path.substring(2).replace('/', '\\'));
-        } else if (path.startsWith("/")) {
+        } else if (path.equals("/")) {
+            path = "C:\\";
+        } else if (path.startsWith("/") && path.length() > 1) {
             path = "C:" + path.replace('/', '\\');
         } else if (path.equals(".")) {
             path = ".";
@@ -60,29 +62,6 @@ public class StringUtil {
             path = "..";
         } else if (path.startsWith("~")) {
             path = "C:\\User";
-
-        } else if (path.startsWith("../") && path.endsWith("/")) {
-            path = "..\\".concat(path.substring(3, path.length() - 1)).concat("\\");
-        } else if (path.startsWith("../")) {
-            path = "..\\".concat(path.substring(3));
-        } else return path;
-
-        return path;
-    }
-
-    private static String convertWindowsToUnix(String path) {
-        if (path.startsWith("~/")) {
-            path = "C:".concat(path.substring(1).replace('/', '\\'));
-        } else if (path.equals("~")) {
-            path = "~";
-        } else if (path.equals(".")) {
-            path = ".";
-        } else if (path.equals("..")) {
-            path = "..";
-        } else if (path.startsWith("~")) {
-            path = "C:\\User";
-        } else if (path.equals("/")) {
-            path = "C:\\";
         } else if (path.startsWith("../") && path.endsWith("/")) {
             path = "..\\".concat(path.substring(3, path.length() - 1)).concat("\\");
         } else if (path.startsWith("../")) {
@@ -92,74 +71,61 @@ public class StringUtil {
         return path;
     }
 
+    private static String convertWindowsToUnix(String path) {
+        if (path.startsWith("C:\\User\\")) {
+            path = "~/".concat(path.substring(8)).replace("\\", "/");
+        } else if (path.endsWith("User")) {
+            path = "~";
+        } else if (path.startsWith("C:")) {
+            path = "/".concat(path.substring(3)).replace("\\", "/");
+        } else if (path.equals(".")) {
+            path = ".";
+        } else if (path.equals("..")) {
+            path = "..";
+        } else if (path.equals("C:\\")) {
+            path = "/";
+        } else if (path.startsWith("..\\") && path.endsWith("\\")) {
+            path = "../".concat(path.substring(3, path.length() - 1)).concat("/");
+        } else if (path.startsWith("..\\")) {
+            path = "../".concat(path.substring(3));
+        } else return path.replace("\\", "/");
+
+        return path;
+    }
+
     public static String joinWords(String[] words) {
         if (words == null || words.length == 0) return null;
-        StringJoiner joiner = new StringJoiner(", ", "[", "]");
-        String res = "";
+        List<String> list = new ArrayList<>();
         for (String word : words) {
-            if (word.equals("")) return null;
-            res = joiner.add(word).toString();
+            if (! word.isEmpty()) list.add(word);
         }
-        return res;
+        if (list.size() > 0) {
+            StringJoiner joiner = new StringJoiner(", ", "[", "]");
+            String res = "";
+            for (String word : words) {
+                if (word.isEmpty()) continue;
+                res = joiner.add(word).toString();
+            }
+            return res;
+        }
+        return null;
     }
 
-    public static void main(String[] args) {
-        System.out.println("Test 1: countEqualIgnoreCaseAndSpaces");
-        String[] words = new String[]{" WordS    \t", "words", "w0rds", "WOR  DS",};
-        String sample = "words   ";
-        int countResult = countEqualIgnoreCaseAndSpaces(words, sample);
-        System.out.println("Result: " + countResult);
-        int expectedCount = 2;
-        System.out.println("Must be: " + expectedCount);
-
-        System.out.println("Test 2: splitWords");
-        String text = "   ,, first, second!!!! third";
-        String[] splitResult = splitWords(text);
-        System.out.println("Result : " + Arrays.toString(splitResult));
-        String[] expectedSplit = new String[]{"first", "second", "third"};
-        System.out.println("Must be: " + Arrays.toString(expectedSplit));
-
-        System.out.println("Test 3: convertPath");
-        String unixPath = "/some/unix/path";
-        String convertResult = convertPath(unixPath, true);
-        System.out.println("Result: " + convertResult);
-        String expectedWinPath = "C:\\some\\unix\\path";
-        System.out.println("Must be: " + expectedWinPath);
-
-        System.out.println("Test 4: joinWords");
-        String[] toJoin = new String[]{"go", "with", "the", "", "FLOW"};
-        String joinResult = joinWords(toJoin);
-        System.out.println("Result: " + joinResult);
-        String expectedJoin = "[go, with, the, FLOW]";
-        System.out.println("Must be: " + expectedJoin);
-    }
 
     private static boolean isCorrectPathUnix(String path) {
-        String[] split = path.split("");
-        int count = 0;
-
-        for (String s : split) {
-            if (s.contains("~") || s.contains("/")) count++;
-            if (s.startsWith("~") || s.startsWith("/")
-                    || ! s.endsWith("/") || s.contains("\\")
-                    || ! s.contains("C:")
-                    || count < 1)
-                return true;
+        for (int i = 0; i < path.length(); i++) {
+            if (path.contains("~")) count++;
+            if (count > 1 && path.charAt(0) != '~' && path.contains("C:/")) return false;
         }
-        return false;
+        return true;
     }
 
     private static boolean isCorrectPathWindows(String path) {
-        String[] split = path.split("");
-        int count = 0;
-        for (String s : split) {
-            if (s.equals("C:")) count++;
-            if (s.startsWith("C:")
-                    && s.contains("\\")
-                    && ! s.contains("~")
-                    && count < 1)
-                return true;
+        for (int i = 0; i < path.length(); i++) {
+            if (path.contains("C:/")) count++;
+//            if (count > 1) return false;
+            if (path.contains("~\\") && path.contains("~") && path.contains("/")) return false;
         }
-        return false;
+        return true;
     }
 }
