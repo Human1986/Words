@@ -6,7 +6,6 @@ import java.util.StringJoiner;
 import java.util.regex.Pattern;
 
 public class StringUtil {
-    static int count = 0;
 
     public static int countEqualIgnoreCaseAndSpaces(String[] words, String sample) {
         int count = 0;
@@ -39,10 +38,6 @@ public class StringUtil {
 
     public static String convertPath(String path, boolean toWin) {
         if (path == null || path.isEmpty()) return null;
-
-        boolean isUnix = path.startsWith("~") || path.startsWith("/");
-        boolean isWindows = path.startsWith("C:");
-
         if (! isCorrectPathUnix(path) && ! isCorrectPathWindows(path)) return null;
 
         if (toWin) {
@@ -50,37 +45,40 @@ public class StringUtil {
         } else {
             return convertWindowsToUnix(path);
         }
-
     }
 
     private static boolean isCorrectPathUnix(String path) {
-        if (path.contains("~")) count++;
+        int count = 0;
         char[] chars = path.toCharArray();
         for (char ch : chars) {
+            if (ch == '~') count++;
             if (ch == '\\'
                     || ch == 'C'
-                    || count > 2) return false;
+                    || count > 1
+                    || path.indexOf("~") > 0) return false;
         }
         return true;
-//        return path.ccontains("\\")
-//                && path.startsWith("~") || path.startsWith("/")
-//                || ! path.contains("C:/")
-//                || count <= 1;
     }
 
     private static boolean isCorrectPathWindows(String path) {
-        if (path.contains("C:/")) count++;
+        int count = 0;
         char[] chars = path.toCharArray();
         for (char ch : chars) {
+            if (ch == 'C') count++;
             if (ch == '~'
-            || ch == '/'
-            || count > 1) return false;
+                    || ch == '/'
+                    || count > 1) return false;
         }
         return true;
+    }
 
-//        return path.contains("~\\")
-//                || ! path.contains("~")
-//                || ! path.contains("/");
+    public static void main(String[] args) {
+
+        String path = "~/";
+        System.out.println(isCorrectPathUnix(path));
+        System.out.println(isCorrectPathWindows(path));
+
+        System.out.println(convertPath(path, true));
     }
 
     private static String convertUnixToWindows(String path) {
@@ -144,6 +142,4 @@ public class StringUtil {
         }
         return null;
     }
-
-
 }
