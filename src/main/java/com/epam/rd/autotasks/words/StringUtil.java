@@ -39,27 +39,48 @@ public class StringUtil {
 
     public static String convertPath(String path, boolean toWin) {
         if (path == null || path.isEmpty()) return null;
-        if (! isCorrectPathWindows(path) || ! isCorrectPathUnix(path)) return null;
+
+        boolean isUnix = path.startsWith("~") || path.startsWith("/");
+        boolean isWindows = path.startsWith("C:");
+
+        if (! isCorrectPathUnix(path) && ! isCorrectPathWindows(path)) return null;
 
         if (toWin) {
             return convertUnixToWindows(path);
         } else {
             return convertWindowsToUnix(path);
         }
+
     }
+
     private static boolean isCorrectPathUnix(String path) {
         if (path.contains("~")) count++;
-        return count <= 1
-                || path.endsWith("~") || path.endsWith("/")
-                || ! path.contains("C:/")
-                || !path.contains("\\");
+        char[] chars = path.toCharArray();
+        for (char ch : chars) {
+            if (ch == '\\'
+                    || ch == 'C'
+                    || count > 2) return false;
+        }
+        return true;
+//        return path.ccontains("\\")
+//                && path.startsWith("~") || path.startsWith("/")
+//                || ! path.contains("C:/")
+//                || count <= 1;
     }
 
     private static boolean isCorrectPathWindows(String path) {
         if (path.contains("C:/")) count++;
-        return ! path.contains("~\\")
-                || ! path.contains("~")
-                || ! path.contains("/");
+        char[] chars = path.toCharArray();
+        for (char ch : chars) {
+            if (ch == '~'
+            || ch == '/'
+            || count > 1) return false;
+        }
+        return true;
+
+//        return path.contains("~\\")
+//                || ! path.contains("~")
+//                || ! path.contains("/");
     }
 
     private static String convertUnixToWindows(String path) {
@@ -124,12 +145,5 @@ public class StringUtil {
         return null;
     }
 
-    public static void main(String[] args) {
 
-        String unix = "/folder1/folder2\\folder3";
-        String win = "C:\\User/root";
-
-        System.out.println(convertPath(unix, false));
-        System.out.println(convertPath(win, true));
-    }
 }
